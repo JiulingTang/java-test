@@ -7,8 +7,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -18,25 +16,23 @@ import java.util.List;
 @Repository
 public class UserResource{
 
-    public UserDao userDao;
-
     @GET
     @Path("add/")
     public Response addUser(@QueryParam("name") String name,
                             @QueryParam("email") String email,
-                            @QueryParam("role") List<String> roles) {
+                            @QueryParam("role") List<String> roles)  {
+    	
+    	User user = new User(name, email, roles);
 
-        User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setRoles(roles);
-
-        if (userDao == null) {
-            userDao = UserDao.getUserDao();
-        }
-
-        userDao.saveUser(user);
-        return Response.ok().entity(user).build();
+        UserDao userDao = UserDao.getUserDao();
+        
+        try {
+			userDao.saveUser(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Response.serverError().entity(e.getMessage()).build();
+		}
+        return Response.ok().build();
     }
 
     @GET
@@ -45,45 +41,39 @@ public class UserResource{
                                @QueryParam("email") String email,
                                @QueryParam("role") List<String> roles) {
 
-        User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setRoles(roles);
+        User user = new User(name, email, roles);
 
-        if (userDao == null) {
-            userDao = UserDao.getUserDao();
-        }
-
-        userDao.updateUser(user);
-        return Response.ok().entity(user).build();
+        UserDao userDao = UserDao.getUserDao();
+            
+        try {
+			userDao.updateUser(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Response.serverError().entity(e.getMessage()).build();
+		}
+        return Response.ok().build();
     }
 
     @GET
     @Path("delete/")
-    public Response deleteUser(@QueryParam("name") String name,
-                               @QueryParam("email") String email,
-                               @QueryParam("role") List<String> roles) {
-        User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setRoles(roles);
+    public Response deleteUser(@QueryParam("email") String email) {
 
-        if (userDao == null) {
-            userDao = UserDao.getUserDao();
-        }
+        UserDao userDao = UserDao.getUserDao();
 
-        userDao.deleteUser(user);
-        return Response.ok().entity(user).build();
+        try {
+			userDao.deleteUser(email);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Response.serverError().entity(e.getMessage()).build();
+		}
+        return Response.ok().build();
     }
 
     @GET
     @Path("find/")
     public Response getUsers() {
+    	UserDao userDao = UserDao.getUserDao();
     	
-        ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {
-    		"classpath:/application-config.xml"	
-    	});
-    	userDao = context.getBean(UserDao.class);
     	List<User> users = userDao.getUsers();
     	if (users == null) {
     		users = new ArrayList<User>();
@@ -95,13 +85,15 @@ public class UserResource{
 
     @GET
     @Path("search/")
-    public Response findUser(@QueryParam("name") String name) {
-
-        if (userDao == null) {
-            userDao = UserDao.getUserDao();
-        }
-
-        User user = userDao.findUser(name);
-        return Response.ok().entity(user).build();
+    public Response findUser(@QueryParam("email") String email) {
+    	UserDao userDao = UserDao.getUserDao();
+    	try {
+    		User user = userDao.findUser(email);
+            return Response.ok().entity(user).build();
+    	}catch (Exception e) {
+    		e.printStackTrace();
+			return Response.serverError().entity(e.getMessage()).build();
+		}
     }
+
 }
